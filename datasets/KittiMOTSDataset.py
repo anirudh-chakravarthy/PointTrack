@@ -17,6 +17,8 @@ from file_utils import *
 from utils.mots_util import *
 import torch.nn.functional as F
 
+import pdb
+
 
 class MOTSTest(Dataset):
     SEQ_IDS_TEST = ["%04d" % idx for idx in range(29)]
@@ -92,7 +94,7 @@ class MOTSCarsVal(Dataset):
         self.class_id = class_id
         self.size = size
         self.transform = transform
-
+                
         self.mots_instance_root = os.path.join(kittiRoot, 'instances')
         self.mots_image_root = os.path.join(kittiRoot, 'images')
 
@@ -105,6 +107,8 @@ class MOTSCarsVal(Dataset):
 
         self.mots_num = len(self.mots_car_pairs)
         self.mots_class_id = 1
+#         pdb.set_trace()
+
 
     def __len__(self):
 
@@ -195,12 +199,12 @@ class MOTSTrackCarsValOffset(Dataset):
             ids = self.SEQ_IDS_VAL
             timestamps = self.TIMESTEPS_PER_SEQ
             self.image_root = os.path.join(kittiRoot, 'images')
-            self.mots_root = os.path.join(systemRoot, 'SpatialEmbeddings/car_SE_val_prediction')
+            self.mots_root = os.path.join(systemRoot, 'car_SE_val_prediction')
         else:
             ids = self.SEQ_IDS_TEST
             timestamps = self.TIMESTEPS_PER_SEQ_TEST
             self.image_root = os.path.join(kittiRoot, 'testing/image_02/')
-            self.mots_root = os.path.join(systemRoot, 'SpatialEmbeddings/car_SE_test_prediction')
+            self.mots_root = os.path.join(systemRoot, 'car_SE_test_prediction')
 
         print('use ', self.mots_root)
         self.batch_num = 2

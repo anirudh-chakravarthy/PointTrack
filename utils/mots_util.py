@@ -14,6 +14,7 @@ from config import *
 from PIL import Image
 import multiprocessing
 
+import pdb
 
 def readInstCar(path, class_id=26):
     pic = np.array(Image.open(path))
@@ -165,17 +166,28 @@ class TrackHelper(object):
                 mask = masks[i]
                 current_inst = newElem(frameCount, self.next_inst_id, embed, mask, class_id=self.class_id)
                 self.all_tracks.append(current_inst)
-                self.active_tracks.append(current_inst)
+                # add initialisation
+                current_inst = current_inst._asdict()
+                current_inst['embed'] = [current_inst['embed']]
+                self.active_tracks.append(TrackElement(**current_inst))
                 self.next_inst_id += 1
             return
         # compare inst by inst.
         # only compare with previous embeds, not including embeds of this frame
-        last_reids = np.concatenate([el.embed[np.newaxis] for el in self.active_tracks], axis=0)
+#         last_reids = np.concatenate([el.embed[np.newaxis] for el in self.active_tracks], axis=0)
         curr_reids = embeds
         asso_sim = np.zeros((n, len(self.active_tracks)))
-
+        reid_dists = np.zeros_like(asso_sim)
+        
+        # compute score based on embedding history
         detections_assigned = np.zeros(len(embeds)).astype(np.bool)
-        reid_dists = cdist(curr_reids, last_reids, "euclidean" if not self.cosine else 'cosine')
+        for i, track in enumerate(self.active_tracks):
+            reid_dists[:, i] = np.min([
+                cdist(curr_reids, embed[np.newaxis], "euclidean" if not self.cosine else 'cosine').squeeze(axis=1)
+                for embed in track.embed
+            ], axis=0)
+
+#         reid_dists = cdist(curr_reids, last_reids, "euclidean" if not self.cosine else 'cosine')
         asso_sim += self.reid_euclidean_scale * (self.reid_euclidean_offset - reid_dists)
 
         if self.mask_iou:
@@ -198,7 +210,10 @@ class TrackHelper(object):
             mask = masks[row]
             current_inst = newElem(frameCount, self.active_tracks[column].track_id, embed, mask, class_id=self.class_id)
             self.all_tracks.append(current_inst)
-            self.active_tracks[column] = current_inst
+            # add to memory
+            current_inst = current_inst._asdict()
+            current_inst['embed'] = self.active_tracks[column].embed + [current_inst['embed']]
+            self.active_tracks[column] = TrackElement(**current_inst)
             detections_assigned[row] = True
 
         # new inst for unassigned
@@ -209,6 +224,9 @@ class TrackHelper(object):
                 mask = masks[i]
                 current_inst = newElem(frameCount, self.next_inst_id, embed, mask, class_id=self.class_id)
                 self.all_tracks.append(current_inst)
-                self.active_tracks.append(current_inst)
+                # add initialisation
+                current_inst = current_inst._asdict()
+                current_inst['embed'] = [current_inst['embed']]
+                self.active_tracks.append(TrackElement(**current_inst))
                 self.next_inst_id += 1
         return
