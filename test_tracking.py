@@ -14,6 +14,8 @@ from utils.mots_util import *
 from config import *
 import subprocess
 
+import pdb
+
 # torch.backends.cudnn.benchmark = True
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
@@ -82,8 +84,8 @@ dColors = [(128, 0, 0), (170, 110, 40), (128, 128, 0), (0, 128, 128), (0, 0, 128
 
 trackHelper = TrackHelper(args['save_dir'], model.module.margin, alive_car=30, car=args['car'] if 'car' in args.keys() else True,
                           mask_iou=True)
-with torch.no_grad():
 
+with torch.no_grad():
     for sample in tqdm(dataset_it):
         subf, frameCount = sample['name'][0][:-4].split('/')[-2:]
         frameCount = int(float(frameCount))
